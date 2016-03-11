@@ -27,7 +27,8 @@ class ParserData(Parser.Parser):
 
     # @lkn{mvilgelm} two flags indicating whether LKN-style compression is enabled
     ENABLE_COMPRESSION = True
-    ENABLE_LOG_COMPRESSED_PKTS = False
+    ENABLE_LOG_COMPRESSED_PKTS = True
+    ENABLE_DISPLAY_COMPRESSED_PKTS = True
 
 
     def __init__(self):
@@ -72,6 +73,9 @@ class ParserData(Parser.Parser):
         is_compressed = False
 
         source = []
+
+        if self.ENABLE_DISPLAY_COMPRESSED_PKTS:
+            print(input[3:])
 
         if self.ENABLE_COMPRESSION:
             if int(input[2]) == 1:
