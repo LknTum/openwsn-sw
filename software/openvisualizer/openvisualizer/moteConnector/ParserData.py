@@ -16,6 +16,7 @@ from pydispatch import dispatcher
 
 from ParserException import ParserException
 import Parser
+from CompressionHelper import TestbedPacket
 
 class ParserData(Parser.Parser):
 
@@ -25,10 +26,10 @@ class ParserData(Parser.Parser):
     IPHC_SAM       = 4
     IPHC_DAM       = 0
 
-    # @lkn{mvilgelm} two flags indicating whether LKN-style compression is enabled
+    # @lkn{mvilgelm} three flags indicating whether LKN-style compression is enabled
     ENABLE_COMPRESSION = True
-    ENABLE_LOG_COMPRESSED_PKTS = True
-    ENABLE_DISPLAY_COMPRESSED_PKTS = True
+    ENABLE_LOG_COMPRESSED_PKTS = False
+    ENABLE_DISPLAY_COMPRESSED_PKTS = False
 
 
     def __init__(self):
@@ -83,7 +84,8 @@ class ParserData(Parser.Parser):
             input.pop(2)
             if self.ENABLE_LOG_COMPRESSED_PKTS:
                 f_dump = open(self.f_dump_name, 'a')
-                f_dump.write(str(input[2:]) + ' ' + str(datetime.datetime.now()-self.zero_time) + '\n')
+                pkt = TestbedPacket.serialize_data(str(input[2:]), format='AIRCRAFT')
+                f_dump.write(pkt.dump_compressed() + ' ' + str(datetime.datetime.now()-self.zero_time) + '\n')
                 f_dump.close()
 
             source = input[2]
