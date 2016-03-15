@@ -3,6 +3,7 @@ __author__ = 'Mikhail Vilgelm'
 import pickle
 import pprint
 import unittest
+import numpy as np
 
 
 class TestbedPacket:
@@ -58,6 +59,21 @@ class MeasurementPacket(TestbedPacket):
     def dump_compressed(self):
         return pickle.dumps(self)
 
+    def get_asn_first(self):
+        """
+        :return: int representation of the asn
+        """
+        return sum([idx*256*int(x) for idx, x in enumerate(reversed(self.asn_first))])
+
+    def get_asn_last(self):
+        """
+
+        :return: int representation of the asn
+        """
+
+        return sum([idx*256*int(x) for idx, x in enumerate(reversed(self.asn_last))])
+
+
 
 class TestTestbedPackets(unittest.TestCase):
 
@@ -69,7 +85,7 @@ class TestTestbedPackets(unittest.TestCase):
         self.assertTrue(True)
 
     def test_recovering(self):
-        test_pkt = ['0', '1', '2', '3', '4', '5', '6', '7', '8','0', '1', '2', '3', '4', '5', '6', '7', '8']
+        test_pkt = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '0', '1', '2', '3', '4', '5', '6', '7', '8']
         pkt = TestbedPacket.serialize_data(test_pkt)
 
         pkt_serialized = pkt.dump_compressed()
@@ -81,6 +97,33 @@ class TestTestbedPackets(unittest.TestCase):
         self.assertEqual(pkt_recovered.seqN, test_pkt[6:8])
         self.assertEqual(pkt_recovered.src_addr, int(test_pkt[0]))
 
+
+class LogProcessor:
+
+    def __init__(self, filename):
+        self.filename = filename
+
+
+    def calculate_delay(self):
+        """
+
+        :return: average delay
+        """
+        delay = []
+        for line in self.yield_line():
+            pkt = pickle.loads(line.split(' '))
+            delay.append(pkt.get_asn_last() - pkt.get_asn_first())
+        return np.mean(delay)
+
+
+    def yield_line(self):
+        """
+        Lazy file reading
+        :return:
+        """
+        with open(self.filename) as f:
+            for line in f:
+                yield line
 
 if __name__ == '__main__':
     '''

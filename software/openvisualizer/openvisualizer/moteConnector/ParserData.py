@@ -29,7 +29,7 @@ class ParserData(Parser.Parser):
     # @lkn{mvilgelm} three flags indicating whether LKN-style compression is enabled
     ENABLE_COMPRESSION = True
     ENABLE_LOG_COMPRESSED_PKTS = False
-    ENABLE_DISPLAY_COMPRESSED_PKTS = False
+    ENABLE_DISPLAY_PKTS = True
 
 
     def __init__(self):
@@ -69,13 +69,14 @@ class ParserData(Parser.Parser):
         headerBytes = input[:2]
         # asn comes in the next 5bytes.
 
-        # @lkn{mvilgelm} Here comes parsing "compressed" packets: if compression is enabled, next byte will indicate whether the packet is compressed or not. Separate log file is produced for this packet
+        # @lkn{mvilgelm} Here comes parsing "compressed" packets: if compression is enabled, next byte will indicate
+        # whether the packet is compressed or not. Separate log file is produced for this packet
 
         is_compressed = False
 
         source = []
 
-        if self.ENABLE_DISPLAY_COMPRESSED_PKTS:
+        if self.ENABLE_DISPLAY_PKTS:
             print(input[3:])
 
         if self.ENABLE_COMPRESSION:
