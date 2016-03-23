@@ -90,6 +90,9 @@ class MeasurementPacket(TestbedPacket):
         temp[0] = l[0]
         return sum(temp)
 
+    def get_delay(self):
+        return self.asn_last - self.asn_first
+
 
 class TestTestbedPackets(unittest.TestCase):
     """
