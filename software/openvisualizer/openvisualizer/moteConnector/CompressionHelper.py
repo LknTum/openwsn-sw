@@ -13,6 +13,9 @@ class TestbedPacket:
 
     @classmethod
     def serialize_data(cls, data, format='SMARTGRID'):
+        """
+        Factory method
+        """
         if format == 'SMARTGRID':
             data = ast.literal_eval(data)
             return MeasurementPacket(asn_first=data[6:11], asn_last=data[1:6],
@@ -23,21 +26,30 @@ class TestbedPacket:
 
 
 class StringPacket(TestbedPacket):
+    """
+    Packets sniffed from aircraft measurments
+    """
 
     def __init__(self, data):
         self.data = data
+
 
     def dump_compressed(self):
         return self.data
 
 
+
 class MeasurementPacket(TestbedPacket):
     """
-    Packet sniffed from smartgrid measurements
+    Packet sniffed for smartgrid measurements
     """
 
     def __init__(self, **kwargs):
-        # FIXME convert the field into integers
+        """
+        Instantiate a measurements packet object
+        :param kwargs:
+        :return:
+        """
         self.asn_first = self.list_to_int(kwargs['asn_first'])
         self.asn_last = self.list_to_int(kwargs['asn_last'])
         self.src_addr = kwargs['src_addr']
@@ -49,8 +61,6 @@ class MeasurementPacket(TestbedPacket):
                                   'retx': int(kwargs['hop_info'][i+1]),
                                   'freq': int(kwargs['hop_info'][i+2]),
                                   'rssi': int(kwargs['hop_info'][i+3])})
-            print(self.hop_info[0])
-
 
     def dump_as_ipv6(self):
         """
@@ -63,68 +73,34 @@ class MeasurementPacket(TestbedPacket):
         pass
 
     def dump_compressed(self):
+        """
+        Serialize object and return as bytes + escape the newline character
+        :return:
+        """
         dump = pickle.dumps(self)
         return dump.replace(b'\n', b'\\n')
 
     def list_to_int(self, l):
+        """
+        Convert a multibyte value to a single number
+        :param l:
+        :return:
+        """
         temp = [(idx*256)*int(x) for idx, x in enumerate(l)]
         temp[0] = l[0]
         return sum(temp)
 
 
-class LogProcessor:
-
-    def __init__(self, filename):
-        self.filename = filename
-
-
-    def calculate_mean_delay(self):
-        """
-
-        :return: average delay
-        """
-        delay = []
-        for line in self.yield_line():
-
-            lines = line.split('\t')
-            line = lines[0]
-            print(line)
-
-            pkt = TestbedPacket.serialize_data(line)
-
-            # print(pkt.hop_info[0])
-
-            if pkt.src_addr != pkt.hop_info[0]['addr']:
-                # not our packet -- probably RPL
-                continue
-
-            d = pkt.asn_last - pkt.asn_first
-            if d < 0:
-                continue
-            delay.append(d*15/1000)
-
-        plt.figure()
-        plt.boxplot(delay)
-        plt.show()
-
-        return np.mean(delay)
-
-
-    def yield_line(self):
-        """
-        Lazy file reading
-        :return:
-        """
-        with open(self.filename, 'r') as f:
-            for line in f:
-                yield line
-
-
 class TestTestbedPackets(unittest.TestCase):
-
-
+    """
+    Unit tests
+    """
 
     def test_recovering(self):
+        """
+        Test whether serializing and recovering works
+        :return:
+        """
         test_pkt = '[2, 1, 65, 1, 0, 0, 239, 64, 1, 0, 0, 234, 0, 0, 2, 3, 23, 38, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]'
 
         pkt = TestbedPacket.serialize_data(test_pkt)
@@ -133,18 +109,8 @@ class TestTestbedPackets(unittest.TestCase):
 
         pkt_recovered = pickle.loads(pkt_serialized.replace(b'\\n', b'\n'))
 
-        print(pkt_recovered.hop_info[0])
-
         self.assertEqual(pkt_recovered.seqN, 234)
         self.assertEqual(pkt_recovered.src_addr, 2)
-
-    def test_reading(self):
-
-        p = LogProcessor(os.getenv("HOME") + '/Projects/TSCH/github/dumps/tsch_dump_2016-03-23_10:29:37')
-
-        delay = p.calculate_mean_delay()
-
-        print(delay)
 
 
 
