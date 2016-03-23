@@ -18,6 +18,7 @@ from ParserException import ParserException
 import Parser
 from CompressionHelper import TestbedPacket
 
+
 class ParserData(Parser.Parser):
 
     HEADER_LENGTH  = 2
@@ -28,7 +29,7 @@ class ParserData(Parser.Parser):
 
     # @lkn{mvilgelm} three flags indicating whether LKN-style compression is enabled
     ENABLE_COMPRESSION = True
-    ENABLE_LOG_COMPRESSED_PKTS = False
+    ENABLE_LOG_COMPRESSED_PKTS = True
     ENABLE_DISPLAY_PKTS = True
 
 
@@ -48,7 +49,7 @@ class ParserData(Parser.Parser):
         # @lkn{mvilgelm} if compression is enabled, separate log file is created
         if self.ENABLE_LOG_COMPRESSED_PKTS:
             self.zero_time = datetime.datetime.now()
-            self.f_dump_name = os.getenv("HOME") + '/Desktop/tsch_dump_' + \
+            self.f_dump_name = os.getenv("HOME") + '/Projects/TSCH/github/dumps/tsch_dump_' + \
                                str(self.zero_time).split('.')[0].replace(' ', '_')
             f_dump = open(self.f_dump_name, 'w+')
             f_dump.close()
@@ -85,8 +86,9 @@ class ParserData(Parser.Parser):
             input.pop(2)
             if self.ENABLE_LOG_COMPRESSED_PKTS:
                 f_dump = open(self.f_dump_name, 'a')
-                pkt = TestbedPacket.serialize_data(str(input[2:]), format='AIRCRAFT')
-                f_dump.write(pkt.dump_compressed() + ' ' + str(datetime.datetime.now()-self.zero_time) + '\n')
+                # TODO recover full ipv6 packet
+                # pkt = TestbedPacket.serialize_data(str(input[2:]), format='SMARTGRID')
+                f_dump.write(str(input[2:]) + '\t' + str(datetime.datetime.now()-self.zero_time).encode('utf-8') + '\n')
                 f_dump.close()
 
             source = input[2]

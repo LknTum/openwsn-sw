@@ -4,6 +4,9 @@ import pickle
 import pprint
 import unittest
 import numpy as np
+import ast
+import os
+import matplotlib.pyplot as plt
 
 
 class TestbedPacket:
@@ -11,9 +14,10 @@ class TestbedPacket:
     @classmethod
     def serialize_data(cls, data, format='SMARTGRID'):
         if format == 'SMARTGRID':
-            return MeasurementPacket(asn_first=data[1:6], asn_last=data[8:13],
-                                     src_addr=int(data[0]), seqN=data[6:8],
-                                     hop_info=data[13:])
+            data = ast.literal_eval(data)
+            return MeasurementPacket(asn_first=data[6:11], asn_last=data[1:6],
+                                     src_addr=int(data[0]), seqN=data[11:13],
+                                     hop_info=data[14:])
         elif format == 'AIRCRAFT':
             return StringPacket(data)
 
@@ -29,22 +33,24 @@ class StringPacket(TestbedPacket):
 
 class MeasurementPacket(TestbedPacket):
     """
-    Packet sniffed from Smartgrid measurements
+    Packet sniffed from smartgrid measurements
     """
 
     def __init__(self, **kwargs):
         # FIXME convert the field into integers
-        self.asn_first = kwargs['asn_first']
-        self.asn_last = kwargs['asn_last']
+        self.asn_first = self.list_to_int(kwargs['asn_first'])
+        self.asn_last = self.list_to_int(kwargs['asn_last'])
         self.src_addr = kwargs['src_addr']
-        self.seqN = kwargs['seqN']
+        self.seqN = self.list_to_int(kwargs['seqN'])
         num_hops = int(len(kwargs['hop_info'])/4)  # assume 4 bytes per hop entry
         self.hop_info = []
         for i in [4*x for x in range(num_hops)]:
-            self.hop_info.append({'addr': kwargs['hop_info'][i],
-                                  'retx': kwargs['hop_info'][i+1],
-                                  'freq': kwargs['hop_info'][i+2],
-                                  'rssi': kwargs['hop_info'][i+3]})
+            self.hop_info.append({'addr': int(kwargs['hop_info'][i]),
+                                  'retx': int(kwargs['hop_info'][i+1]),
+                                  'freq': int(kwargs['hop_info'][i+2]),
+                                  'rssi': int(kwargs['hop_info'][i+3])})
+            print(self.hop_info[0])
+
 
     def dump_as_ipv6(self):
         """
@@ -57,45 +63,13 @@ class MeasurementPacket(TestbedPacket):
         pass
 
     def dump_compressed(self):
-        return pickle.dumps(self)
+        dump = pickle.dumps(self)
+        return dump.replace(b'\n', b'\\n')
 
-    def get_asn_first(self):
-        """
-        :return: int representation of the asn
-        """
-        return sum([idx*256*int(x) for idx, x in enumerate(reversed(self.asn_first))])
-
-    def get_asn_last(self):
-        """
-
-        :return: int representation of the asn
-        """
-
-        return sum([idx*256*int(x) for idx, x in enumerate(reversed(self.asn_last))])
-
-
-
-class TestTestbedPackets(unittest.TestCase):
-
-    def test_parsing(self):
-        '''
-        TODO
-        :return:
-        '''
-        self.assertTrue(True)
-
-    def test_recovering(self):
-        test_pkt = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '0', '1', '2', '3', '4', '5', '6', '7', '8']
-        pkt = TestbedPacket.serialize_data(test_pkt)
-
-        pkt_serialized = pkt.dump_compressed()
-
-        print(pkt_serialized)
-
-        pkt_recovered = pickle.loads(pkt_serialized)
-
-        self.assertEqual(pkt_recovered.seqN, test_pkt[6:8])
-        self.assertEqual(pkt_recovered.src_addr, int(test_pkt[0]))
+    def list_to_int(self, l):
+        temp = [(idx*256)*int(x) for idx, x in enumerate(l)]
+        temp[0] = l[0]
+        return sum(temp)
 
 
 class LogProcessor:
@@ -104,15 +78,35 @@ class LogProcessor:
         self.filename = filename
 
 
-    def calculate_delay(self):
+    def calculate_mean_delay(self):
         """
 
         :return: average delay
         """
         delay = []
         for line in self.yield_line():
-            pkt = pickle.loads(line.split(' '))
-            delay.append(pkt.get_asn_last() - pkt.get_asn_first())
+
+            lines = line.split('\t')
+            line = lines[0]
+            print(line)
+
+            pkt = TestbedPacket.serialize_data(line)
+
+            # print(pkt.hop_info[0])
+
+            if pkt.src_addr != pkt.hop_info[0]['addr']:
+                # not our packet -- probably RPL
+                continue
+
+            d = pkt.asn_last - pkt.asn_first
+            if d < 0:
+                continue
+            delay.append(d*15/1000)
+
+        plt.figure()
+        plt.boxplot(delay)
+        plt.show()
+
         return np.mean(delay)
 
 
@@ -121,15 +115,46 @@ class LogProcessor:
         Lazy file reading
         :return:
         """
-        with open(self.filename) as f:
+        with open(self.filename, 'r') as f:
             for line in f:
                 yield line
+
+
+class TestTestbedPackets(unittest.TestCase):
+
+
+
+    def test_recovering(self):
+        test_pkt = '[2, 1, 65, 1, 0, 0, 239, 64, 1, 0, 0, 234, 0, 0, 2, 3, 23, 38, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]'
+
+        pkt = TestbedPacket.serialize_data(test_pkt)
+
+        pkt_serialized = pkt.dump_compressed()
+
+        pkt_recovered = pickle.loads(pkt_serialized.replace(b'\\n', b'\n'))
+
+        print(pkt_recovered.hop_info[0])
+
+        self.assertEqual(pkt_recovered.seqN, 234)
+        self.assertEqual(pkt_recovered.src_addr, 2)
+
+    def test_reading(self):
+
+        p = LogProcessor(os.getenv("HOME") + '/Projects/TSCH/github/dumps/tsch_dump_2016-03-23_10:29:37')
+
+        delay = p.calculate_mean_delay()
+
+        print(delay)
+
+
 
 if __name__ == '__main__':
     '''
     Testing
     '''
     unittest.main()
+
+
 
 
 
