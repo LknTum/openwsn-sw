@@ -50,9 +50,11 @@ class MeasurementPacket(TestbedPacket):
         :param kwargs:
         :return:
         """
+        print(kwargs['asn_first'])
         self.asn_first = self.list_to_int(kwargs['asn_first'])
+        print(self.asn_first)
         self.asn_last = self.list_to_int(kwargs['asn_last'])
-        self.src_addr = kwargs['src_addr']
+
         self.seqN = self.list_to_int(kwargs['seqN'])
         num_hops = int(len(kwargs['hop_info'])/4)  # assume 4 bytes per hop entry
         self.hop_info = []
@@ -61,6 +63,7 @@ class MeasurementPacket(TestbedPacket):
                                   'retx': int(kwargs['hop_info'][i+1]),
                                   'freq': int(kwargs['hop_info'][i+2]),
                                   'rssi': int(kwargs['hop_info'][i+3])})
+        self.src_addr = self.hop_info[0]['addr']
 
     def dump_as_ipv6(self):
         """
@@ -86,12 +89,19 @@ class MeasurementPacket(TestbedPacket):
         :param l:
         :return:
         """
-        temp = [(idx*256)*int(x) for idx, x in enumerate(l)]
+        temp = [(256**idx)*int(x) for idx, x in enumerate(l)]
         temp[0] = l[0]
         return sum(temp)
 
     def get_delay(self):
         return self.asn_last - self.asn_first
+
+    def num_hops(self):
+        num_hops = 0
+        for hop in self.hop_info:
+            if hop['addr'] != 0:
+                num_hops += 1
+        return num_hops
 
 
 class TestTestbedPackets(unittest.TestCase):
