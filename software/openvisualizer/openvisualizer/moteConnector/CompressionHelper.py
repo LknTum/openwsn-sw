@@ -50,9 +50,11 @@ class MeasurementPacket(TestbedPacket):
         :param kwargs:
         :return:
         """
-        print(kwargs['asn_first'])
+        if 'timestamp' in kwargs.keys():
+            self.timestamp = kwargs['timestamp']
+        # print(kwargs['asn_first'])
         self.asn_first = self.list_to_int(kwargs['asn_first'])
-        print(self.asn_first)
+        # print(self.asn_first)
         self.asn_last = self.list_to_int(kwargs['asn_last'])
 
         self.seqN = self.list_to_int(kwargs['seqN'])

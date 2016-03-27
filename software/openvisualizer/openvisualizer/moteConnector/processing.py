@@ -9,7 +9,7 @@ import sys
 import datetime
 
 
-gl_mote_range = range(1, 11)
+gl_mote_range = range(1, 14)
 gl_image_path = os.getenv("HOME") + '/Projects/TSCH/github/images/'
 
 
@@ -139,11 +139,11 @@ class LogProcessor:
         retx = []
         for pkt in self.packets:
             for hop in pkt.hop_info:
-                if hop['retx']!=0:
+                if hop['retx'] != 0:
                     retx.append(hop['retx'])
 
         plt.figure()
-        plt.boxplot(retx)
+        plt.hist(retx)
         if show:
             plt.show()
 
@@ -242,7 +242,6 @@ class LogProcessor:
             plt.savefig(gl_image_path+'packets.png', format='png', bbox='tight')
 
 
-
 def find_latest_dump(path):
     mtime = lambda f: os.stat(os.path.join(path, f)).st_mtime
     return list(sorted(os.listdir(path), key=mtime))[-1]
@@ -255,8 +254,8 @@ if __name__ == '__main__':
 
     folder = os.getenv("HOME") + '/Projects/TSCH/github/dumps/'
 
-    # p = LogProcessor(folder+find_latest_dump(folder))
-    p = LogProcessor(folder+'/tests/test0.log')
+    p = LogProcessor(folder+find_latest_dump(folder))
+    # p = LogProcessor(folder+'/tests/test0.log')
 
     print(p.find_motes_in_action())
 
@@ -266,8 +265,8 @@ if __name__ == '__main__':
 
     # p.plot_delays(normalized=True, show=False)
 
-    # p.plot_avg_hops(show=False)
-    # p.plot_retx(show=False)
+    p.plot_avg_hops(show=False)
+    p.plot_retx(show=False)
 
     plt.show()
 
