@@ -10,6 +10,7 @@ import datetime
 
 
 gl_mote_range = range(1, 14)
+gl_dump_path = os.getenv("HOME") + '/Projects/TSCH/github/dumps/'
 gl_image_path = os.getenv("HOME") + '/Projects/TSCH/github/images/'
 
 
@@ -252,13 +253,13 @@ if __name__ == '__main__':
     # if len(sys.argv) != 2:
     #    exit("Usage: %s dumpfile" % sys.argv[0])
 
-    folder = os.getenv("HOME") + '/Projects/TSCH/github/dumps/'
+    folder = gl_dump_path + ''
 
     p = LogProcessor(folder+find_latest_dump(folder))
-    # p = LogProcessor(folder+'/tests/test0.log')
+    # p = LogProcessor(folder+'/tests/tdma_wo_interference_hopping.log')
 
     print(p.find_motes_in_action())
-
+"""
     p.plot_num_packets(show=False)
     p.plot_timeline(show=False)
     p.plot_delays(show=False)
@@ -269,5 +270,5 @@ if __name__ == '__main__':
     p.plot_retx(show=False)
 
     plt.show()
-
+"""
 
