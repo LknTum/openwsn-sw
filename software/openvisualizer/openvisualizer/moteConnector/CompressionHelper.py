@@ -42,12 +42,14 @@ class StringPacket(TestbedPacket):
 class MeasurementPacket(TestbedPacket):
     """
     Packet sniffed for smartgrid measurements
+    asn_first, asn_last, seqN - integers
+    hop_info - list, where every entry is a dictionary
     """
 
     def __init__(self, **kwargs):
         """
         Instantiate a measurements packet object
-        :param kwargs:
+        :param
         :return:
         """
         if 'timestamp' in kwargs.keys():
@@ -61,10 +63,13 @@ class MeasurementPacket(TestbedPacket):
         num_hops = int(len(kwargs['hop_info'])/4)  # assume 4 bytes per hop entry
         self.hop_info = []
         for i in [4*x for x in range(num_hops)]:
-            self.hop_info.append({'addr': int(kwargs['hop_info'][i]),
+            hop_info_temp = {'addr': int(kwargs['hop_info'][i]),
                                   'retx': int(kwargs['hop_info'][i+1]),
                                   'freq': int(kwargs['hop_info'][i+2]),
-                                  'rssi': int(kwargs['hop_info'][i+3])})
+                                  'rssi': int(kwargs['hop_info'][i+3])}
+            if hop_info_temp['addr'] != 0:
+                self.hop_info.append(hop_info_temp)
+
         self.src_addr = self.hop_info[0]['addr']
 
     def dump_as_ipv6(self):
