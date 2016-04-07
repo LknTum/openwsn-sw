@@ -51,8 +51,7 @@ class ParserData(Parser.Parser):
         # @lkn{mvilgelm} if compression is enabled, separate log file is created
         if self.ENABLE_LOG_COMPRESSED_PKTS:
             self.zero_time = datetime.datetime.now()
-            os.system('mkdir ')
-            self.f_dump_name = 'tsch_dump_' + \
+            self.f_dump_name = gl_dump_path + 'tsch_dump_' + \
                                str(self.zero_time).split('.')[0].replace(' ', '_')
             f_dump = open(self.f_dump_name, 'w+')
             f_dump.close()
