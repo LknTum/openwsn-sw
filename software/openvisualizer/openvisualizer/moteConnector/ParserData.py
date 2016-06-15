@@ -31,7 +31,7 @@ class ParserData(Parser.Parser):
 
     # @lkn{mvilgelm} three flags indicating whether LKN-style compression is enabled
     ENABLE_COMPRESSION = True
-    ENABLE_LOG_COMPRESSED_PKTS = True
+    ENABLE_LOG_COMPRESSED_PKTS = False
     ENABLE_DISPLAY_PKTS = True
 
 
